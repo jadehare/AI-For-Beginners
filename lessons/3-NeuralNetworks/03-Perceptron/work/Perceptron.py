@@ -59,6 +59,8 @@ neg_examples = np.array(
 )
 print("positive examples", pos_examples[0:3], "negtive examples", neg_examples[0:3])
 
+weights_history = []
+
 
 def train(positive_examples, negative_examples, num_iterations=100):
     num_dims = positive_examples.shape[1]
@@ -82,11 +84,22 @@ def train(positive_examples, negative_examples, num_iterations=100):
 
         z = np.dot(pos, weights)
         if z < 0:  # positive example was classified as negative
-            weights = weights + pos.reshape(weights.shape)
+            tmp = weights + pos.reshape(weights.shape)
+            print(
+                "update weights:",
+                weights,
+                " pos:",
+                pos.reshape(weights.shape),
+                " update:",
+                tmp,
+            )
+            weights = tmp
 
         z = np.dot(neg, weights)
         if z >= 0:  # negative example was classified as positive
             weights = weights - neg.reshape(weights.shape)
+
+        weights_history.append([weights, pos, neg])
 
         # Periodically, print out the current accuracy on all examples
         if i % report_frequency == 0:
@@ -104,24 +117,64 @@ def train(positive_examples, negative_examples, num_iterations=100):
 
 
 wts = train(pos_examples, neg_examples)
-print("transpose", wts.transpose())
+print("wts", wts, "transpose", wts.transpose(), "weights_history", len(weights_history))
 
-def plot_boundary(positive_examples, negative_examples, weights):
+def accuracy(weights, test_x, test_labels):
+    res = np.dot(np.c_[test_x,np.ones(len(test_x))],weights)
+    return (res.reshape(test_labels.shape)*test_labels>=0).sum()/float(len(test_labels))
+
+accuracy(wts, test_x, test_labels)
+
+def plot_boundary(positive_examples, negative_examples, weights, pos, neg):
     if np.isclose(weights[1], 0):
         if np.isclose(weights[0], 0):
-            x = y = np.array([-6, 6], dtype = 'float32')
+            x = y = np.array([-6, 6], dtype="float32")
         else:
-            y = np.array([-6, 6], dtype='float32')
-            x = -(weights[1] * y + weights[2])/weights[0]
+            y = np.array([-6, 6], dtype="float32")
+            x = -(weights[1] * y + weights[2]) / weights[0]
     else:
-        x = np.array([-6, 6], dtype='float32')
-        y = -(weights[0] * x + weights[2])/weights[1]
+        x = np.array([-6, 6], dtype="float32")
+        y = -(weights[0] * x + weights[2]) / weights[1]
 
+    plt.clf()
     plt.xlim(-6, 6)
-    plt.ylim(-6, 6)                      
-    plt.plot(positive_examples[:,0], positive_examples[:,1], 'bo')
-    plt.plot(negative_examples[:,0], negative_examples[:,1], 'ro')
-    plt.plot(x, y, 'g', linewidth=2.0)
-    plt.show()
+    plt.ylim(-6, 6)
+    plt.plot(positive_examples[:, 0], positive_examples[:, 1], "bo")
+    plt.plot(negative_examples[:, 0], negative_examples[:, 1], "ro")
 
-plot_boundary(pos_examples,neg_examples,wts)
+    if pos is not None:
+        plt.plot(pos[0], pos[1], "*", color="lightblue", markersize=10)  # 其他点
+        plt.plot(neg[0], neg[1], "*", color="pink", markersize=10)  # 其他点
+
+    plt.plot(x, y, "g", linewidth=2.0)
+    plt.draw()
+
+
+count = 0
+
+
+def on_key(event):
+    global count
+    if event.key == "right":
+        count += 1
+        if count >= len(weights_history):
+            count = 0
+    elif event.key == "left":
+        count -= 1
+        if count < 0:
+            count = len(weights_history) - 1
+
+    his = weights_history[count]
+    wts = his[0]
+    pos = his[1]
+    neg = his[2]
+
+    print("count", count, "wts", wts)
+    plot_boundary(pos_examples, neg_examples, wts, pos, neg)
+
+
+fig, ax = plt.subplots()
+fig.canvas.mpl_connect("key_press_event", on_key)
+
+plot_boundary(pos_examples, neg_examples, wts, None, None)
+plt.show()
