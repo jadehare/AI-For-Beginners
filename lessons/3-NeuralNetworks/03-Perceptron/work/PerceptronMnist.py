@@ -7,6 +7,7 @@ import ipywidgets as widgets
 import pickle
 import os
 import gzip
+from sklearn.decomposition import PCA
 
 # pick the seed for reproducability - change it to explore the effects of random variations
 np.random.seed(1)
@@ -127,11 +128,11 @@ def plotit2(snapshots_mn, step):
 
     plt.plot(arange, data)
     plt.plot(step, data[step], "bo")
-    plt.draw()
 
 
 def pl3(step):
     plotit2(snapshots_mn, step)
+    plt.draw()
 
 
 # def pl4(step): plotit2(snapshots_mn2,step)
@@ -157,4 +158,22 @@ def on_key(event):
 
 fig.canvas.mpl_connect("key_press_event", on_key)
 pl3(0)
+plt.show()
+
+
+def pca_analysis(positive_label, negative_label):
+    positive_images, negative_images = set_mnist_pos_neg(positive_label, negative_label)
+    M = np.append(positive_images, negative_images, 0)
+
+    mypca = PCA(n_components=2)
+    mypca.fit(M)
+
+    pos_points = mypca.transform(positive_images[:200])
+    neg_points = mypca.transform(negative_images[:200])
+
+    plt.plot(pos_points[:, 0], pos_points[:, 1], "bo")
+    plt.plot(neg_points[:, 0], neg_points[:, 1], "ro")
+
+
+pca_analysis(1, 0)
 plt.show()
