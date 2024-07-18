@@ -184,7 +184,14 @@ def train_graph(positive_examples, negative_examples, num_iterations=100):
                 (np.concatenate(weights), [(pos_correct + neg_correct) / 2.0, 0, 0])
             )
 
-    return np.array(snapshots)
+    for shot in snapshots:
+        print("shot", type(shot[0]), len(shot[0]), type(shot[1]), len(shot[1]))
+
+    da = np.array(snapshots)
+    for shot in da:
+        print("npd", type(shot[0]), len(shot[0]), type(shot[1]), len(shot[1]))
+
+    return da
 
 
 snapshots = train_graph(pos_examples, neg_examples)
@@ -198,6 +205,23 @@ def plotit(pos_examples, neg_examples, snapshots, step):
     fig.add_subplot(1, 2, 1)
     plot_boundary(pos_examples, neg_examples, snapshots[step][0])
     fig.add_subplot(1, 2, 2)
+
+    ssl = len(snapshots[:, 1])
+    arange = np.arange(ssl)
+    print("arange", arange)
+
+    data = snapshots[:, 1]
+    print(
+        "data",
+        data,
+        type(data),
+        data.ndim,
+        data.shape,
+        data.size,
+        data.dtype,
+        data.itemsize,
+    )
+
     plt.plot(np.arange(len(snapshots[:, 1])), snapshots[:, 1])
     plt.ylabel("Accuracy")
     plt.xlabel("Iteration")
